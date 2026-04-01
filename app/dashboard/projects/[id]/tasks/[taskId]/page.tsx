@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Plus, Clock } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Clock, Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
 import type { Task } from "@/types";
 import { TASK_STATUS_LABEL, TASK_STATUS_COLOR, PRIORITY_LABEL } from "@/types";
@@ -135,13 +135,22 @@ export default function TaskPage() {
                         )}
                     </div>
                 </div>
-                <button
-                    onClick={() => setDeleteConfirm(true)}
-                    className="flex items-center gap-2 px-3 py-2 border border-red-300 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors"
-                >
-                    <Trash2 size={15} />
-                    Удалить
-                </button>
+                <div className="flex items-center gap-2">
+                    <Link
+                        href={`/dashboard/projects/${id}/tasks/${taskId}/edit`}
+                        className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                        <Pencil size={15} />
+                        Редактировать
+                    </Link>
+                    <button
+                        onClick={() => setDeleteConfirm(true)}
+                        className="flex items-center gap-2 px-3 py-2 border border-red-300 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                        <Trash2 size={15} />
+                        Удалить
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
