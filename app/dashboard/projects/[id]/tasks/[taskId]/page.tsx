@@ -5,8 +5,9 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Trash2, Plus, Clock, Pencil } from "lucide-react";
 import { useSession } from "next-auth/react";
-import type { Task } from "@/types";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import { TASK_STATUS_LABEL, TASK_STATUS_COLOR, PRIORITY_LABEL } from "@/types";
+import type { Task } from "@/types";
 
 export default function TaskPage() {
     const { id, taskId } = useParams();
@@ -437,28 +438,12 @@ export default function TaskPage() {
             </div>
 
             {deleteConfirm && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Удалить задачу?</h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                            Это действие удалит задачу со всеми комментариями и записями времени.
-                        </p>
-                        <div className="flex gap-3">
-                            <button
-                                onClick={handleDeleteTask}
-                                className="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-red-700 transition-colors"
-                            >
-                                Удалить
-                            </button>
-                            <button
-                                onClick={() => setDeleteConfirm(false)}
-                                className="flex-1 border border-gray-300 rounded-lg py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                                Отмена
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <ConfirmModal
+                    title="Удалить задачу?"
+                    description="Это действие удалит задачу со всеми комментариями и записями времени."
+                    onConfirm={handleDeleteTask}
+                    onCancel={() => setDeleteConfirm(false)}
+                />
             )}
         </div>
     );

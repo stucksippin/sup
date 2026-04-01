@@ -3,79 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Plus, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { TaskListItem } from "@/types";
-import { TASK_STATUS_LABEL, TASK_STATUS_COLOR, PRIORITY_DOT_COLOR, PRIORITY_LABEL } from "@/types";
-
-function TaskRow({ task, projectId, depth = 0 }: { task: TaskListItem; projectId: string; depth?: number }) {
-    const [expanded, setExpanded] = useState(false);
-    const hasSubtasks = (task.subTasks?.length ?? 0) > 0;
-    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "DONE";
-
-    return (
-        <>
-            <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                <td className="py-3 px-4">
-                    <div className="flex items-center gap-2" style={{ paddingLeft: depth * 20 }}>
-                        {hasSubtasks ? (
-                            <button onClick={() => setExpanded(!expanded)} className="text-gray-400 hover:text-gray-600">
-                                {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                            </button>
-                        ) : (
-                            <span className="w-4" />
-                        )}
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_DOT_COLOR[task.priority]}`} />
-                        <Link
-                            href={`/dashboard/projects/${projectId}/tasks/${task.id}`}
-                            className="text-sm text-gray-900 hover:text-blue-600 font-medium"
-                        >
-                            {task.title}
-                        </Link>
-                        {hasSubtasks && (
-                            <span className="text-xs text-gray-400">
-                                ({task.subTasks.filter((s) => s.status === "DONE").length}/{task.subTasks.length})
-                            </span>
-                        )}
-                    </div>
-                </td>
-                <td className="py-3 px-4">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TASK_STATUS_COLOR[task.status]}`}>
-                        {TASK_STATUS_LABEL[task.status]}
-                    </span>
-                </td>
-                <td className="py-3 px-4">
-                    <span className="text-xs text-gray-600">{PRIORITY_LABEL[task.priority]}</span>
-                </td>
-                <td className="py-3 px-4">
-                    <div className="flex -space-x-1">
-                        {task.assignees.slice(0, 3).map(({ user }) => (
-                            <div
-                                key={user.id}
-                                title={user.name}
-                                className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs border-2 border-white"
-                            >
-                                {user.name[0]}
-                            </div>
-                        ))}
-                    </div>
-                </td>
-                <td className="py-3 px-4">
-                    <span className={`text-xs ${isOverdue ? "text-red-600 font-medium" : "text-gray-500"}`}>
-                        {task.dueDate ? new Date(task.dueDate).toLocaleDateString("ru-RU") : "—"}
-                    </span>
-                </td>
-                <td className="py-3 px-4">
-                    <span className="text-xs text-gray-500">
-                        {task.plannedHours ? `${task.plannedHours} ч` : "—"}
-                    </span>
-                </td>
-            </tr>
-            {expanded && task.subTasks.map((sub) => (
-                <TaskRow key={sub.id} task={sub as TaskListItem} projectId={projectId} depth={depth + 1} />
-            ))}
-        </>
-    );
-}
+import { TASK_STATUS_LABEL } from "@/types";
+import TaskRow from "@/components/tasks/TaskRow";
 
 export default function TasksPage() {
     const { id } = useParams();
