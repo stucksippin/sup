@@ -5,61 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Trash2, Plus, Clock } from "lucide-react";
 import { useSession } from "next-auth/react";
-
-interface Task {
-    id: string;
-    title: string;
-    description: string | null;
-    status: string;
-    priority: string;
-    startDate: string | null;
-    dueDate: string | null;
-    plannedHours: number | null;
-    assignees: { user: { id: string; name: string } }[];
-    milestone: { id: string; title: string } | null;
-    subTasks: {
-        id: string;
-        title: string;
-        status: string;
-        assignees: { user: { id: string; name: string } }[];
-    }[];
-    comments: {
-        id: string;
-        text: string;
-        createdAt: string;
-        author: { id: string; name: string };
-    }[];
-    timeLogs: {
-        id: string;
-        date: string;
-        hours: number;
-        comment: string | null;
-        user: { id: string; name: string };
-    }[];
-}
-
-const statusLabel: Record<string, string> = {
-    NEW: "Новая",
-    IN_PROGRESS: "В работе",
-    ON_REVIEW: "На проверке",
-    DONE: "Выполнена",
-    CANCELLED: "Отменена",
-};
-
-const statusColor: Record<string, string> = {
-    NEW: "bg-gray-100 text-gray-700",
-    IN_PROGRESS: "bg-blue-100 text-blue-700",
-    ON_REVIEW: "bg-yellow-100 text-yellow-700",
-    DONE: "bg-green-100 text-green-700",
-    CANCELLED: "bg-red-100 text-red-700",
-};
-
-const priorityLabel: Record<string, string> = {
-    LOW: "Низкий",
-    MEDIUM: "Средний",
-    HIGH: "Высокий",
-    CRITICAL: "Критический",
-};
+import type { Task } from "@/types";
+import { TASK_STATUS_LABEL, TASK_STATUS_COLOR, PRIORITY_LABEL } from "@/types";
 
 export default function TaskPage() {
     const { id, taskId } = useParams();
@@ -113,9 +60,7 @@ export default function TaskPage() {
     }
 
     async function handleDeleteComment(commentId: string) {
-        await fetch(`/api/tasks/${taskId}/comments/${commentId}`, {
-            method: "DELETE",
-        });
+        await fetch(`/api/tasks/${taskId}/comments/${commentId}`, { method: "DELETE" });
         loadTask();
     }
 
@@ -170,7 +115,6 @@ export default function TaskPage() {
 
     return (
         <div>
-            {/* Шапка */}
             <div className="flex items-start justify-between mb-6">
                 <div className="flex items-start gap-3">
                     <Link
@@ -182,8 +126,8 @@ export default function TaskPage() {
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[task.status]}`}>
-                                {statusLabel[task.status]}
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TASK_STATUS_COLOR[task.status]}`}>
+                                {TASK_STATUS_LABEL[task.status]}
                             </span>
                         </div>
                         {task.milestone && (
@@ -201,47 +145,48 @@ export default function TaskPage() {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-                {/* Левая колонка */}
                 <div className="col-span-2 space-y-4">
-                    {/* Описание */}
                     <div className="bg-white border border-gray-200 rounded-xl p-5">
                         <h2 className="text-sm font-semibold text-gray-700 mb-2">Описание</h2>
                         <p className="text-sm text-gray-600">{task.description || "Описание не указано"}</p>
                     </div>
 
                     {/* Подзадачи */}
-                    {task.subTasks.length > 0 && (
-                        <div className="bg-white border border-gray-200 rounded-xl p-5">
-                            <div className="flex items-center justify-between mb-3">
-                                <h2 className="text-sm font-semibold text-gray-700">
-                                    Подзадачи ({completedSubtasks}/{task.subTasks.length})
-                                </h2>
+                    <div className="bg-white border border-gray-200 rounded-xl p-5">
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="text-sm font-semibold text-gray-700">
+                                Подзадачи ({completedSubtasks}/{task.subTasks.length})
+                            </h2>
+                            {task.subTasks.length > 0 && (
                                 <div className="flex-1 mx-4 bg-gray-200 rounded-full h-1.5">
                                     <div
                                         className="bg-blue-500 h-1.5 rounded-full transition-all"
-                                        style={{
-                                            width: task.subTasks.length
-                                                ? `${(completedSubtasks / task.subTasks.length) * 100}%`
-                                                : "0%",
-                                        }}
+                                        style={{ width: `${(completedSubtasks / task.subTasks.length) * 100}%` }}
                                     />
                                 </div>
-                            </div>
+                            )}
+                            <Link
+                                href={`/dashboard/projects/${id}/tasks/new?parentTaskId=${task.id}`}
+                                className="text-xs text-blue-600 hover:underline"
+                            >
+                                + Добавить
+                            </Link>
+                        </div>
+                        {task.subTasks.length === 0 ? (
+                            <p className="text-sm text-gray-400">Подзадач нет</p>
+                        ) : (
                             <div className="space-y-2">
                                 {task.subTasks.map((sub) => (
                                     <div key={sub.id} className="flex items-center gap-3 py-1">
                                         <input
                                             type="checkbox"
                                             checked={sub.status === "DONE"}
-                                            onChange={(e) =>
-                                                handleSubtaskStatusChange(sub.id, e.target.checked ? "DONE" : "NEW")
-                                            }
+                                            onChange={(e) => handleSubtaskStatusChange(sub.id, e.target.checked ? "DONE" : "NEW")}
                                             className="rounded border-gray-300 text-blue-600"
                                         />
                                         <Link
                                             href={`/dashboard/projects/${id}/tasks/${sub.id}`}
-                                            className={`text-sm flex-1 hover:text-blue-600 ${sub.status === "DONE" ? "line-through text-gray-400" : "text-gray-800"
-                                                }`}
+                                            className={`text-sm flex-1 hover:text-blue-600 ${sub.status === "DONE" ? "line-through text-gray-400" : "text-gray-800"}`}
                                         >
                                             {sub.title}
                                         </Link>
@@ -253,36 +198,13 @@ export default function TaskPage() {
                                     </div>
                                 ))}
                             </div>
-                            <Link
-                                href={`/dashboard/projects/${id}/tasks/new?parentTaskId=${task.id}`}
-                                className="text-xs text-blue-600 hover:underline mt-3 inline-block"
-                            >
-                                + Добавить подзадачу
-                            </Link>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
-                    {task.subTasks.length === 0 && (
-                        <div className="bg-white border border-gray-200 rounded-xl p-5">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-semibold text-gray-700">Подзадачи</h2>
-                                <Link
-                                    href={`/dashboard/projects/${id}/tasks/new?parentTaskId=${task.id}`}
-                                    className="text-xs text-blue-600 hover:underline"
-                                >
-                                    + Добавить подзадачу
-                                </Link>
-                            </div>
-                            <p className="text-sm text-gray-400 mt-2">Подзадач нет</p>
-                        </div>
-                    )}
-
-                    {/* Журнал времени */}
+                    {/* Трудозатраты */}
                     <div className="bg-white border border-gray-200 rounded-xl p-5">
                         <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-sm font-semibold text-gray-700">
-                                Трудозатраты
-                            </h2>
+                            <h2 className="text-sm font-semibold text-gray-700">Трудозатраты</h2>
                             <button
                                 onClick={() => setTimeLogForm({ ...timeLogForm, show: !timeLogForm.show })}
                                 className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
@@ -292,7 +214,6 @@ export default function TaskPage() {
                             </button>
                         </div>
 
-                        {/* Прогресс план/факт */}
                         {task.plannedHours && (
                             <div className="mb-3">
                                 <div className="flex justify-between text-xs text-gray-500 mb-1">
@@ -301,11 +222,8 @@ export default function TaskPage() {
                                 </div>
                                 <div className="bg-gray-200 rounded-full h-2">
                                     <div
-                                        className={`h-2 rounded-full transition-all ${totalLoggedHours > task.plannedHours ? "bg-red-500" : "bg-blue-500"
-                                            }`}
-                                        style={{
-                                            width: `${Math.min((totalLoggedHours / task.plannedHours) * 100, 100)}%`,
-                                        }}
+                                        className={`h-2 rounded-full transition-all ${totalLoggedHours > task.plannedHours ? "bg-red-500" : "bg-blue-500"}`}
+                                        style={{ width: `${Math.min((totalLoggedHours / task.plannedHours) * 100, 100)}%` }}
                                     />
                                 </div>
                             </div>
@@ -372,15 +290,10 @@ export default function TaskPage() {
                                             <span className="text-xs text-gray-500">
                                                 {new Date(log.date).toLocaleDateString("ru-RU")} · {log.user.name}
                                             </span>
-                                            {log.comment && (
-                                                <span className="text-xs text-gray-400">— {log.comment}</span>
-                                            )}
+                                            {log.comment && <span className="text-xs text-gray-400">— {log.comment}</span>}
                                         </div>
                                         {session?.user?.id === log.user.id && (
-                                            <button
-                                                onClick={() => handleDeleteTimeLog(log.id)}
-                                                className="text-xs text-red-400 hover:text-red-600"
-                                            >
+                                            <button onClick={() => handleDeleteTimeLog(log.id)} className="text-xs text-red-400 hover:text-red-600">
                                                 Удалить
                                             </button>
                                         )}
@@ -395,7 +308,6 @@ export default function TaskPage() {
                         <h2 className="text-sm font-semibold text-gray-700 mb-3">
                             Комментарии ({task.comments.length})
                         </h2>
-
                         <div className="space-y-3 mb-4">
                             {task.comments.map((comment) => (
                                 <div key={comment.id} className="flex gap-3">
@@ -410,10 +322,7 @@ export default function TaskPage() {
                                                     {new Date(comment.createdAt).toLocaleString("ru-RU")}
                                                 </span>
                                                 {session?.user?.id === comment.author.id && (
-                                                    <button
-                                                        onClick={() => handleDeleteComment(comment.id)}
-                                                        className="text-xs text-red-400 hover:text-red-600"
-                                                    >
+                                                    <button onClick={() => handleDeleteComment(comment.id)} className="text-xs text-red-400 hover:text-red-600">
                                                         Удалить
                                                     </button>
                                                 )}
@@ -424,7 +333,6 @@ export default function TaskPage() {
                                 </div>
                             ))}
                         </div>
-
                         <div className="flex gap-2">
                             <textarea
                                 value={commentText}
@@ -446,17 +354,14 @@ export default function TaskPage() {
 
                 {/* Правая колонка */}
                 <div className="space-y-4">
-                    {/* Смена статуса */}
                     <div className="bg-white border border-gray-200 rounded-xl p-5">
                         <h2 className="text-sm font-semibold text-gray-700 mb-3">Статус</h2>
                         <div className="space-y-1">
-                            {Object.entries(statusLabel).map(([key, label]) => (
+                            {Object.entries(TASK_STATUS_LABEL).map(([key, label]) => (
                                 <button
                                     key={key}
                                     onClick={() => handleStatusChange(key)}
-                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${task.status === key
-                                            ? statusColor[key] + " font-medium"
-                                            : "text-gray-600 hover:bg-gray-50"
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${task.status === key ? TASK_STATUS_COLOR[key] + " font-medium" : "text-gray-600 hover:bg-gray-50"
                                         }`}
                                 >
                                     {label}
@@ -465,20 +370,17 @@ export default function TaskPage() {
                         </div>
                     </div>
 
-                    {/* Детали */}
                     <div className="bg-white border border-gray-200 rounded-xl p-5">
                         <h2 className="text-sm font-semibold text-gray-700 mb-3">Детали</h2>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Приоритет</span>
-                                <span className="text-gray-900">{priorityLabel[task.priority]}</span>
+                                <span className="text-gray-900">{PRIORITY_LABEL[task.priority]}</span>
                             </div>
                             {task.startDate && (
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Начало</span>
-                                    <span className="text-gray-900">
-                                        {new Date(task.startDate).toLocaleDateString("ru-RU")}
-                                    </span>
+                                    <span className="text-gray-900">{new Date(task.startDate).toLocaleDateString("ru-RU")}</span>
                                 </div>
                             )}
                             {task.dueDate && (
@@ -505,7 +407,6 @@ export default function TaskPage() {
                         </div>
                     </div>
 
-                    {/* Исполнители */}
                     <div className="bg-white border border-gray-200 rounded-xl p-5">
                         <h2 className="text-sm font-semibold text-gray-700 mb-3">Исполнители</h2>
                         {task.assignees.length === 0 ? (
@@ -526,7 +427,6 @@ export default function TaskPage() {
                 </div>
             </div>
 
-            {/* Модал удаления */}
             {deleteConfirm && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4">

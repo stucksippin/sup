@@ -3,18 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, Search, Filter } from "lucide-react";
-
-interface Project {
-    id: string;
-    title: string;
-    status: string;
-    priority: string;
-    customer: string | null;
-    startDate: string | null;
-    endDate: string | null;
-    manager: { name: string };
-    _count: { tasks: number };
-}
+import type { Project } from "@/types";
 
 const statusLabel: Record<string, string> = {
     NEW: "Новый",

@@ -4,11 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-
-interface User {
-    id: string;
-    name: string;
-}
+import type { User } from "@/types";
 
 export default function EditProjectPage() {
     const { id } = useParams();
