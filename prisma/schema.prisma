@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EXECUTOR
+  OBSERVER
+}
+
+enum ProjectStatus {
+  NEW
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum MilestoneStatus {
+  PLANNED
+  ACHIEVED
+  OVERDUE
+}
+
+enum TaskStatus {
+  NEW
+  IN_PROGRESS
+  ON_REVIEW
+  DONE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  TASK_STATUS_CHANGED
+  TASK_DUE_SOON
+  TASK_OVERDUE
+  TASK_COMMENTED
+  PROJECT_STATUS_CHANGED
+}
+
+enum DocumentCategory {
+  TECHNICAL_SPEC
+  CONTRACT
+  PROTOCOL
+  REPORT
+  OTHER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(EXECUTOR)
+  position     String?
+  skills       String[]
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  managedProjects     Project[]         @relation("ProjectManager")
+  projectMembers      ProjectMember[]
+  taskAssignees       TaskAssignee[]
+  timeLogs            TimeLog[]
+  comments            Comment[]
+  notifications       Notification[]
+  uploadedDocs        ProjectDocument[]
+  uploadedAttachments Attachment[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  status      ProjectStatus   @default(NEW)
+  priority    ProjectPriority @default(MEDIUM)
+  customer    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float?
+  category    String?
+  managerId   String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  manager    User              @relation("ProjectManager", fields: [managerId], references: [id])
+  members    ProjectMember[]
+  milestones Milestone[]
+  tasks      Task[]
+  documents  ProjectDocument[]
+
+  @@map("projects")
+}
+
+model Milestone {
+  id          String          @id @default(cuid())
+  projectId   String
+  title       String
+  description String?
+  plannedDate DateTime
+  actualDate  DateTime?
+  status      MilestoneStatus @default(PLANNED)
+  createdAt   DateTime        @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@map("milestones")
+}
+
+model ProjectMember {
+  id            String @id @default(cuid())
+  projectId     String
+  userId        String
+  roleInProject Role   @default(EXECUTOR)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model Task {
+  id           String       @id @default(cuid())
+  projectId    String
+  milestoneId  String?
+  parentTaskId String?
+  title        String
+  description  String?
+  status       TaskStatus   @default(NEW)
+  priority     TaskPriority @default(MEDIUM)
+  startDate    DateTime?
+  dueDate      DateTime?
+  plannedHours Float?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestone   Milestone?     @relation(fields: [milestoneId], references: [id])
+  parentTask  Task?          @relation("SubTasks", fields: [parentTaskId], references: [id])
+  subTasks    Task[]         @relation("SubTasks")
+  assignees   TaskAssignee[]
+  timeLogs    TimeLog[]
+  comments    Comment[]
+  attachments Attachment[]
+
+  @@map("tasks")
+}
+
+model TaskAssignee {
+  taskId String
+  userId String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@map("task_assignees")
+}
+
+model TimeLog {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  date      DateTime
+  hours     Float
+  comment   String?
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("time_logs")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  taskId    String
+  authorId  String
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  filename   String
+  filepath   String
+  size       Int
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  uploader User  @relation(fields: [uploadedBy], references: [id])
+  task     Task? @relation(fields: [entityId], references: [id], map: "attachment_task_fk")
+
+  @@map("attachments")
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType
+  message    String
+  entityType String?
+  entityId   String?
+  isRead     Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ProjectDocument {
+  id         String           @id @default(cuid())
+  projectId  String
+  filename   String
+  filepath   String
+  category   DocumentCategory @default(OTHER)
+  size       Int
+  uploadedBy String
+  createdAt  DateTime         @default(now())
+
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploader User    @relation(fields: [uploadedBy], references: [id])
+
+  @@map("project_documents")
+}
