@@ -5,15 +5,16 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import TaskForm from "@/components/tasks/TaskForm";
+import { useToast } from "@/lib/toastContext";
 
 export default function NewTaskPage() {
     const { id } = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
     const parentTaskId = searchParams.get("parentTaskId");
+    const { success, error: showError } = useToast();
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
     const [members, setMembers] = useState([]);
     const [milestones, setMilestones] = useState([]);
     const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
@@ -53,7 +54,6 @@ export default function NewTaskPage() {
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setLoading(true);
-        setError("");
 
         const res = await fetch(`/api/projects/${id}/tasks`, {
             method: "POST",
@@ -70,13 +70,16 @@ export default function NewTaskPage() {
         setLoading(false);
 
         if (!res.ok) {
-            setError("Ошибка при создании задачи");
+            showError("Ошибка при создании задачи");
         } else {
-            router.push(
-                parentTaskId
-                    ? `/projects/${id}/tasks/${parentTaskId}`
-                    : `/projects/${id}?tab=tasks`
-            );
+            success("Задача создана");
+            setTimeout(() => {
+                router.push(
+                    parentTaskId
+                        ? `/projects/${id}/tasks/${parentTaskId}`
+                        : `/projects/${id}?tab=tasks`
+                );
+            }, 1500);
         }
     }
 
@@ -84,7 +87,7 @@ export default function NewTaskPage() {
         <div className="max-w-2xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
                 <Link
-                    href={parentTaskId ? `/projects/${id}/tasks/${parentTaskId}` : `/projects/${id}/tasks`}
+                    href={parentTaskId ? `/projects/${id}/tasks/${parentTaskId}` : `/projects/${id}?tab=tasks`}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                     <ArrowLeft size={20} className="text-gray-600" />
@@ -108,12 +111,12 @@ export default function NewTaskPage() {
                 onToggleAssignee={toggleAssignee}
                 onSubmit={handleSubmit}
                 loading={loading}
-                error={error}
+                error=""
                 submitLabel="Создать задачу"
                 cancelHref={
                     parentTaskId
                         ? `/projects/${id}/tasks/${parentTaskId}`
-                        : `/projects/${id}/tasks`
+                        : `/projects/${id}?tab=tasks`
                 }
                 showParentTask={!parentTaskId}
             />

@@ -26,16 +26,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         setToasts((prev) => prev.filter((t) => t.id !== id));
     }, []);
 
-    const success = useCallback((message: string) => addToast(message, "success"), [addToast]);
-    const error = useCallback((message: string) => addToast(message, "error"), [addToast]);
+    const success = useCallback(
+        (message: string) => addToast(message, "success"),
+        [addToast]
+    );
+
+    const error = useCallback(
+        (message: string) => addToast(message, "error"),
+        [addToast]
+    );
 
     return (
-        <ToastContext.Provider value= {{ success, error }
-}>
-    { children }
-    < ToastContainer toasts = { toasts } onRemove = { removeToast } />
+        <ToastContext.Provider value={{ success, error }}>
+            {children}
+            <ToastContainer toasts={toasts} onRemove={removeToast} />
         </ToastContext.Provider>
-  );
+    );
 }
 
 export function useToast() {

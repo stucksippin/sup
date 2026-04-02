@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useToast } from "@/lib/toastContext";
 
 export default function EditUserPage() {
     const { id } = useParams();
     const router = useRouter();
+    const { success, error: showError } = useToast();
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
-    const [error, setError] = useState("");
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -50,7 +51,6 @@ export default function EditUserPage() {
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setLoading(true);
-        setError("");
 
         const res = await fetch(`/api/users/${id}`, {
             method: "PATCH",
@@ -61,9 +61,10 @@ export default function EditUserPage() {
         setLoading(false);
 
         if (!res.ok) {
-            setError("Ошибка при сохранении");
+            showError("Ошибка при сохранении");
         } else {
-            router.push("/users");
+            success("Данные сотрудника обновлены");
+            setTimeout(() => router.push("/users"), 1500);
         }
     }
 
@@ -161,13 +162,7 @@ export default function EditUserPage() {
                                     className="flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full"
                                 >
                                     {skill}
-                                    <button
-                                        type="button"
-                                        onClick={() => removeSkill(skill)}
-                                        className="hover:text-blue-900 ml-1"
-                                    >
-                                        ×
-                                    </button>
+                                    <button type="button" onClick={() => removeSkill(skill)} className="hover:text-blue-900 ml-1">×</button>
                                 </span>
                             ))}
                         </div>
@@ -186,8 +181,6 @@ export default function EditUserPage() {
                         Учётная запись активна
                     </label>
                 </div>
-
-                {error && <p className="text-red-500 text-sm">{error}</p>}
 
                 <div className="flex gap-3 pt-2">
                     <button

@@ -5,13 +5,14 @@ import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import TaskForm from "@/components/tasks/TaskForm";
+import { useToast } from "@/lib/toastContext";
 
 export default function EditTaskPage() {
     const { id, taskId } = useParams();
     const router = useRouter();
+    const { success, error: showError } = useToast();
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
-    const [error, setError] = useState("");
     const [members, setMembers] = useState([]);
     const [milestones, setMilestones] = useState([]);
     const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
@@ -57,7 +58,6 @@ export default function EditTaskPage() {
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setLoading(true);
-        setError("");
 
         const res = await fetch(`/api/tasks/${taskId}`, {
             method: "PATCH",
@@ -73,9 +73,10 @@ export default function EditTaskPage() {
         setLoading(false);
 
         if (!res.ok) {
-            setError("Ошибка при сохранении");
+            showError("Ошибка при сохранении");
         } else {
-            router.push(`/projects/${id}/tasks/${taskId}`);
+            success("Задача обновлена");
+            setTimeout(() => router.push(`/projects/${id}/tasks/${taskId}`), 1500);
         }
     }
 
@@ -92,8 +93,8 @@ export default function EditTaskPage() {
         <div className="max-w-2xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
                 <Link
-                    href={`/projects/${id}?tab=tasks`}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors mt-1"
+                    href={`/projects/${id}/tasks/${taskId}`}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                     <ArrowLeft size={20} className="text-gray-600" />
                 </Link>
@@ -112,9 +113,9 @@ export default function EditTaskPage() {
                 onToggleAssignee={toggleAssignee}
                 onSubmit={handleSubmit}
                 loading={loading}
-                error={error}
+                error=""
                 submitLabel="Сохранить изменения"
-                cancelHref={`/projects/${id}?tab=tasks`}
+                cancelHref={`/projects/${id}/tasks/${taskId}`}
             />
         </div>
     );
