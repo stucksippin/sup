@@ -4,13 +4,30 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import type { User } from "@/types";
+import { useToast } from "@/lib/toastContext";
+
+interface User {
+    id: string;
+    name: string;
+}
 
 export default function NewProjectPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
     const [managers, setManagers] = useState<User[]>([]);
+    const [form, setForm] = useState({
+        title: "",
+        description: "",
+        customer: "",
+        managerId: "",
+        status: "NEW",
+        priority: "MEDIUM",
+        startDate: "",
+        endDate: "",
+        budget: "",
+        category: "",
+    });
+    const { success, error: showError } = useToast();
 
     useEffect(() => {
         fetch("/api/users?role=MANAGER,ADMIN")
@@ -21,43 +38,30 @@ export default function NewProjectPage() {
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setLoading(true);
-        setError("");
-
-        const formData = new FormData(e.currentTarget);
 
         const res = await fetch("/api/projects", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                title: formData.get("title"),
-                description: formData.get("description"),
-                customer: formData.get("customer"),
-                managerId: formData.get("managerId"),
-                status: formData.get("status"),
-                priority: formData.get("priority"),
-                startDate: formData.get("startDate"),
-                endDate: formData.get("endDate"),
-                budget: formData.get("budget"),
-                category: formData.get("category"),
+                ...form,
+                managerId: form.managerId || managers[0]?.id,
             }),
         });
 
         setLoading(false);
 
         if (!res.ok) {
-            setError("Ошибка при создании проекта");
+            showError("Ошибка при создании проекта");
         } else {
-            router.push("/projects");
+            success("Проект успешно создан");
+            setTimeout(() => router.push("/projects"), 1000);
         }
     }
 
     return (
         <div className="max-w-2xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
-                <Link
-                    href="/projects"
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
+                <Link href="/projects" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                     <ArrowLeft size={20} className="text-gray-600" />
                 </Link>
                 <div>
@@ -72,34 +76,32 @@ export default function NewProjectPage() {
                         Название <span className="text-red-500">*</span>
                     </label>
                     <input
-                        name="title"
                         required
                         maxLength={200}
+                        value={form.title}
+                        onChange={(e) => setForm({ ...form, title: e.target.value })}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Название проекта"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Описание
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Описание</label>
                     <textarea
-                        name="description"
                         maxLength={2000}
                         rows={3}
+                        value={form.description}
+                        onChange={(e) => setForm({ ...form, description: e.target.value })}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                        placeholder="Описание проекта"
                     />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Статус
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Статус</label>
                         <select
-                            name="status"
+                            value={form.status}
+                            onChange={(e) => setForm({ ...form, status: e.target.value })}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="NEW">Новый</option>
@@ -109,13 +111,11 @@ export default function NewProjectPage() {
                             <option value="CANCELLED">Отменён</option>
                         </select>
                     </div>
-
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Приоритет
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Приоритет</label>
                         <select
-                            name="priority"
+                            value={form.priority}
+                            onChange={(e) => setForm({ ...form, priority: e.target.value })}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="LOW">Низкий</option>
@@ -126,50 +126,43 @@ export default function NewProjectPage() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Руководитель проекта
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Руководитель</label>
                     <select
-                        name="managerId"
+                        value={form.managerId}
+                        onChange={(e) => setForm({ ...form, managerId: e.target.value })}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         {managers.map((m) => (
-                            <option key={m.id} value={m.id}>
-                                {m.name}
-                            </option>
+                            <option key={m.id} value={m.id}>{m.name}</option>
                         ))}
                     </select>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Заказчик
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Заказчик</label>
                     <input
-                        name="customer"
+                        value={form.customer}
+                        onChange={(e) => setForm({ ...form, customer: e.target.value })}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Название компании или ФИО"
                     />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Дата начала
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Дата начала</label>
                         <input
-                            name="startDate"
                             type="date"
+                            value={form.startDate}
+                            onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Дата завершения
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Дата завершения</label>
                         <input
-                            name="endDate"
                             type="date"
+                            value={form.endDate}
+                            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
@@ -177,30 +170,24 @@ export default function NewProjectPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Бюджет
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Бюджет</label>
                         <input
-                            name="budget"
                             type="number"
                             min="0"
+                            value={form.budget}
+                            onChange={(e) => setForm({ ...form, budget: e.target.value })}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="0"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Направление
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Направление</label>
                         <input
-                            name="category"
+                            value={form.category}
+                            onChange={(e) => setForm({ ...form, category: e.target.value })}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Например: IT, Строительство"
                         />
                     </div>
                 </div>
-
-                {error && <p className="text-red-500 text-sm">{error}</p>}
 
                 <div className="flex gap-3 pt-2">
                     <button

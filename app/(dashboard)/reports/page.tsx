@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { BarChart2, Clock, Download } from "lucide-react";
+import { BarChart2, Clock, Users } from "lucide-react";
 import Link from "next/link";
 
 interface Project {
@@ -74,6 +73,21 @@ export default function ReportsPage() {
                         </div>
                     )}
                 </div>
+
+                <Link
+                    href="/reports/workload"
+                    className="bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-sm transition-all"
+                >
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <Users size={20} className="text-purple-600" />
+                        </div>
+                        <h2 className="text-base font-semibold text-gray-900">Загрузка сотрудников</h2>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                        Таблица загрузки по сотрудникам за неделю или месяц с цветовой индикацией перегрузки.
+                    </p>
+                </Link>
             </div>
         </div>
     );

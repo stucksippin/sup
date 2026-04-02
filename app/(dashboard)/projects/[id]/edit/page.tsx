@@ -5,13 +5,14 @@ import { useRouter, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import type { User } from "@/types";
+import { useToast } from "@/lib/toastContext";
+
 
 export default function EditProjectPage() {
     const { id } = useParams();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
-    const [error, setError] = useState("");
     const [managers, setManagers] = useState<User[]>([]);
     const [form, setForm] = useState({
         title: "",
@@ -25,6 +26,8 @@ export default function EditProjectPage() {
         budget: "",
         category: "",
     });
+
+    const { success, error: showError } = useToast();
 
     useEffect(() => {
         Promise.all([
@@ -51,7 +54,6 @@ export default function EditProjectPage() {
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setLoading(true);
-        setError("");
 
         const res = await fetch(`/api/projects/${id}`, {
             method: "PATCH",
@@ -62,9 +64,10 @@ export default function EditProjectPage() {
         setLoading(false);
 
         if (!res.ok) {
-            setError("Ошибка при сохранении");
+            showError("Ошибка при сохранении");
         } else {
-            router.push(`/projects/${id}`);
+            success("Проект обновлён");
+            setTimeout(() => router.push(`/projects/${id}`), 2000);
         }
     }
 
@@ -217,7 +220,6 @@ export default function EditProjectPage() {
                     </div>
                 </div>
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
 
                 <div className="flex gap-3 pt-2">
                     <button
