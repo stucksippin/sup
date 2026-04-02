@@ -37,7 +37,7 @@ export default function TaskRow({ task, projectId, depth = 0 }: TaskRowProps) {
                         )}
                         <PriorityDot priority={task.priority} />
                         <Link
-                            href={`/dashboard/projects/${projectId}/tasks/${task.id}`}
+                            href={`/projects/${projectId}/tasks/${task.id}`}
                             className="text-sm text-gray-900 hover:text-blue-600 font-medium"
                         >
                             {task.title}

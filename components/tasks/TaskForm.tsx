@@ -1,33 +1,13 @@
 "use client";
 
 import Link from "next/link";
-
-interface User {
-    id: string;
-    name: string;
-}
-
-interface Milestone {
-    id: string;
-    title: string;
-}
-
-interface TaskFormData {
-    title: string;
-    description: string;
-    status: string;
-    priority: string;
-    startDate: string;
-    dueDate: string;
-    plannedHours: string;
-    milestoneId: string;
-}
+import type { TaskFormData, SimpleUser, SimpleMilestone } from "@/types";
 
 interface TaskFormProps {
     form: TaskFormData;
     onChange: (form: TaskFormData) => void;
-    members: User[];
-    milestones: Milestone[];
+    members: SimpleUser[];
+    milestones: SimpleMilestone[];
     selectedAssignees: string[];
     onToggleAssignee: (userId: string) => void;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;

@@ -149,3 +149,58 @@ export const PRIORITY_BADGE_COLOR: Record<string, string> = {
     HIGH: "bg-red-100 text-red-700",
     CRITICAL: "bg-red-200 text-red-800",
 };
+
+
+export interface TaskFormData {
+    title: string;
+    description: string;
+    status: string;
+    priority: string;
+    startDate: string;
+    dueDate: string;
+    plannedHours: string;
+    milestoneId: string;
+}
+
+export interface SimpleUser {
+    id: string;
+    name: string;
+}
+
+export interface SimpleMilestone {
+    id: string;
+    title: string;
+}
+
+
+
+export const MILESTONE_STATUS_LABEL: Record<string, string> = {
+    PLANNED: "Запланирована",
+    ACHIEVED: "Достигнута",
+    OVERDUE: "Просрочена",
+};
+
+export const MILESTONE_STATUS_COLOR: Record<string, string> = {
+    PLANNED: "bg-gray-100 text-gray-700",
+    ACHIEVED: "bg-green-100 text-green-700",
+    OVERDUE: "bg-red-100 text-red-700",
+};
+
+
+export const DOCUMENT_CATEGORY_LABEL: Record<string, string> = {
+    TECHNICAL_SPEC: "Техническое задание",
+    CONTRACT: "Договор",
+    PROTOCOL: "Протокол",
+    REPORT: "Отчёт",
+    OTHER: "Прочее",
+};
+
+export interface ProjectDocument {
+    id: string;
+    filename: string;
+    filepath: string;
+    category: string;
+    size: number;
+    createdAt: string;
+    uploader: { id: string; name: string };
+}

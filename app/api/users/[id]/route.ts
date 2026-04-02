@@ -1,26 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import bcrypt from "bcryptjs";
 
-export async function GET(req: Request) {
+export async function GET(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
     const session = await auth();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { searchParams } = new URL(req.url);
-    const roleParam = searchParams.get("role");
-    const roles = roleParam ? roleParam.split(",") : [];
-
-    const users = await prisma.user.findMany({
-        where: {
-            ...(roles.length > 0 && { role: { in: roles as any[] } }),
-        },
+    const user = await prisma.user.findUnique({
+        where: { id: params.id },
         select: {
             id: true,
             name: true,
             email: true,
             role: true,
             position: true,
+            skills: true,
             isActive: true,
             createdAt: true,
             _count: {
@@ -30,42 +27,42 @@ export async function GET(req: Request) {
                             task: { status: { in: ["NEW", "IN_PROGRESS", "ON_REVIEW"] } },
                         },
                     },
+                    managedProjects: true,
                 },
             },
         },
-        orderBy: { name: "asc" },
     });
 
-    return NextResponse.json(users);
+    if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    return NextResponse.json(user);
 }
 
-export async function POST(req: Request) {
+export async function PATCH(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
     const session = await auth();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-    if (!user || user.role !== "ADMIN") {
+    const currentUser = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!currentUser || currentUser.role !== "ADMIN") {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await req.json();
 
-    const existing = await prisma.user.findUnique({ where: { email: body.email } });
-    if (existing) {
-        return NextResponse.json({ error: "Email уже используется" }, { status: 400 });
-    }
-
-    const passwordHash = await bcrypt.hash(body.password, 10);
-
-    const newUser = await prisma.user.create({
+    const user = await prisma.user.update({
+        where: { id: params.id },
         data: {
             name: body.name,
             email: body.email,
-            passwordHash,
-            role: body.role || "EXECUTOR",
+            role: body.role,
             position: body.position || null,
+            skills: body.skills || [],
+            isActive: body.isActive,
         },
     });
 
-    return NextResponse.json(newUser);
+    return NextResponse.json(user);
 }
